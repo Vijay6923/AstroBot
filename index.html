@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AstroBot — Powered by MOSDAC (ISRO)</title>
+<style>
+  :root{
+    --bg:#0c1320;
+    --panel:#0f182a;
+    --panel-2:#111c33;
+    --text:#e6f0ff;
+    --muted:#a7b3c7;
+    --accent:#6ee7f2;
+    --accent-2:#a78bfa;
+    --success:#38e07b;
+    --warning:#facc15;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --radius:16px;
+  }
+  
+  /* CHAT HISTORY SIDEBAR STYLES */
+  .chat-history-sidebar {
+    position: fixed;
+    left: -300px;
+    top: 0;
+    height: 100vh;
+    width: 300px;
+    background: var(--panel);
+    border-right: 1px solid #1f2d4d;
+    padding: 16px;
+    overflow-y: auto;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+  }
+
+  .chat-history-sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1f2d4d;
+  }
+
+  .sidebar-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  .close-sidebar {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+  }
+
+  .new-chat-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+  }
+
+  .new-chat-btn:hover {
+    background: #5cd0e0;
+  }
+
+  .chat-sessions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chat-session-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: var(--panel-2);
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .chat-session-item:hover {
+    border-color: var(--accent);
+    background: var(--panel);
+  }
+
+  .chat-session-item.active {
+    border-color: var(--accent);
+    background: var(--panel);
+  }
+
+  .chat-session-title {
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-weight: 500;
+    word-break: break-word;
+  }
+
+  .chat-session-date {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .chat-session-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    gap: 8px;
+  }
+
+  .delete-session-btn, .rename-session-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .delete-session-btn {
+    color: #ff6b6b;
+  }
+
+  .delete-session-btn:hover {
+    color: #ff4b4b;
+  }
+
+  .rename-session-btn {
+    color: var(--accent);
+  }
+
+  .rename-session-btn:hover {
+    color: var(--accent-2);
+  }
+
+  .history-toggle {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    z-index: 1001;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .history-toggle:hover {
+    background: #5cd0e0;
+  }
+
+  /* Overlay for when sidebar is open */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: none;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  /* Rename Modal Styles */
+  .rename-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rename-modal.open {
+    display: flex;
+  }
+
+  .rename-modal-content {
+    background: var(--panel);
+    padding: 20px;
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: var(--shadow);
+    border: 1px solid #1f2d4d;
+  }
+
+  .rename-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .rename-modal-header h3 {
+    margin: 0;
+    color: var(--text);
+  }
+
+  .rename-modal-close {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .rename-input {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid #233255;
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
+
+  .rename-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .rename-cancel-btn, .rename-save-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    border: none;
+  }
+
+  .rename-cancel-btn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid #233255;
+  }
+
+  .rename-save-btn {
+    background: var(--accent);
+    color: white;
+  }
+
+  .rename-save-btn:hover {
+    background: #5cd0e0;
+  }
+
+  /* Main content styles */
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, sans-serif;
+    color:var(--text);
+    background:#0c1320;
+  }
+  .wrap{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    max-width:1050px;
+    margin:0 auto;
+    padding:16px;
+    gap:16px;
+    transition: margin-left 0.3s ease;
+  }
+
+  .wrap.sidebar-open {
+    margin-left: 300px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#111c33;
+    border:1px solid #1f2d4d;
+    box-shadow:var(--shadow);
+    padding:12px 16px;
+    border-radius:var(--radius);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .logo{
+    width:32px;
+    height:32px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#172241;
+  }
+  .title .name{
+    font-weight:700
+  }
+  .title .sub{
+    font-size:12px;
+    color:var(--muted)
+  }
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .select, .button{
+    background:var(--panel);
+    border:1px solid #233255;
+    color:var(--text);
+    border-radius:12px;
+    padding:8px 10px;
+    outline:none;
+  }
+  .button{
+    cursor:pointer
+  }
+  .chat{
+    flex:1;
+    overflow:auto;
+    background:#0e1729;
+    border:1px solid #1c294a;
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .msg{
+    display:grid;
+    grid-template-columns:40px 1fr 40px;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .avatar{
+    width:40px;
+    height:40px;
+    border-radius:999px;
+    display:grid;
+    place-items:center;
+    background:#141d36;
+    border:1px solid #213153;
+  }
+  .bubble{
+    background:var(--panel-2);
+    border:1px solid #1f2d4d;
+    border-radius:14px;
+    padding:12px 14px;
+    line-height:1.55;
+  }
+  .bubble h4{
+    margin:0 0 6px 0;
+    font-size:14px;
+    color:#cfe3ff
+  }
+  .bubble .badge{
+    display:inline-flex;
+    gap:6px;
+    align-items:center;
+    padding:6px 8px;
+    font-size:12px;
+    border-radius:10px;
+    margin-top:8px;
+  }
+  .badge .dot{
+    width:8px;
+    height:8px;
+    border-radius:999px;
+  }
+  .badge.isro{
+    color:#c9eaff;
+    background:#0f1f3b;
+    border:1px solid #2b5fc4;
+  }
+  .badge.isro .dot{
+    background:#3b82f6;
+    box-shadow:0 0 10px #3b82f6;
+  }
+  .badge.weather{
+    color:#d1fadd;
+    background:#0f1f1b;
+    border:1px solid #15803d;
+  }
+  .badge.weather .dot{
+    background:#22c55e;
+    box-shadow:0 0 10px #22c55e;
+  }
+  .composer{
+    display:grid;
+    grid-template-columns:1fr 44px 44px;
+    gap:10px;
+    align-items:center;
+  }
+  .input{
+    background:var(--panel);
+    border:1px solid #233255;
+    border-radius:14px;
+    padding:8px 12px;
+  }
+  .input textarea{
+    width:100%;
+    resize:none;
+    background:transparent;
+    border:0;
+    color:var(--text);
+    font-size:15px;
+    outline:none
+  }
+  .send, .mic{
+    width:44px;
+    height:44px;
+    border-radius:12px;
+    border:1px solid #233255;
+    background:#0f1a30;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+  }
+  .send:hover, .mic:hover{
+    border-color:#2e4e88
+  }
+  .mic.rec{
+    border-color:#3b82f6;
+    box-shadow:0 0 6px #3b82f6 inset;
+  }
+  .region-selector{
+    margin-top:10px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .region-input{
+    background:var(--panel);
+    border:1px solid #233255;
+    color:var(--text);
+    border-radius:12px;
+    padding:8px 12px;
+    flex:1;
+  }
+  .region-btn{
+    background:var(--panel);
+    border:1px solid #233255;
+    color:var(--text);
+    border-radius:12px;
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .pdf-link{
+    color:#6ee7f2;
+    text-decoration:underline;
+    cursor:pointer;
+    margin-top:10px;
+    display:inline-block;
+  }
+  .pdf-link:hover{
+    color:#a78bfa;
+  }
+  .pdf-container{
+    margin-top:15px;
+    padding:10px;
+    background:var(--panel);
+    border-radius:10px;
+    border:1px solid #2b5fc4;
+  }
+</style>
+</head>
+<body>
+  <!-- Rename Modal -->
+  <div class="rename-modal" id="renameModal">
+    <div class="rename-modal-content">
+      <div class="rename-modal-header">
+        <h3>Rename Chat</h3>
+        <button class="rename-modal-close" id="renameModalClose">✕</button>
+      </div>
+      <input type="text" class="rename-input" id="renameInput" placeholder="Enter chat name...">
+      <div class="rename-modal-actions">
+        <button class="rename-cancel-btn" id="renameCancelBtn">Cancel</button>
+        <button class="rename-save-btn" id="renameSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Chat History Sidebar -->
+  <div id="chatHistorySidebar" class="chat-history-sidebar">
+    <div class="sidebar-header">
+      <h3>Chat History</h3>
+      <button class="close-sidebar" id="closeSidebar">✕</button>
+    </div>
+    <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
+    <ul id="chatSessionsList" class="chat-sessions">
+      <!-- Chat sessions will be loaded here -->
+    </ul>
+  </div>
+
+  <!-- History Toggle Button -->
+  <button class="history-toggle" id="historyToggle">📋</button>
+
+  <!-- Main Content -->
+  <div class="wrap" id="mainContent">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">🛰</div>
+        <div class="title">
+          <div class="name">AstroBot</div>
+          <div class="sub">Powered by MOSDAC (ISRO)</div>
+        </div>
+      </div>
+      <div class="controls">
+        <select class="select" id="modeSelect">
+          <option value="auto">Data Source</option>
+          <option value="mosdac" selected>MOSDAC</option>
+          <option value="nasa">NASA</option>
+          <option value="isro">ISRO</option>
+          <option value="wikipedia">WIKIPEDIA</option>
+        </select>
+        <!-- Mode Dropdown -->
+        <select class="select" id="modeSelect">
+          <option value="auto" selected>Auto Detect</option>
+          <option value="isro">Static Data</option>
+          <option value="weather">Live Updates</option>
+        </select>
+        <button class="button" id="clearBtn">Clear Chat</button>
+      </div>
+    </div>
+
+    <!-- Region Selector -->
+    <div class="region-selector">
+      <input type="text" id="regionInput" class="region-input" placeholder="Enter your region/city for weather queries...">
+      <button id="setRegionBtn" class="region-btn">Set Region</button>
+    </div>
+
+    <!-- Chat -->
+    <div id="chat" class="chat"></div>
+
+    <!-- Composer -->
+    <div class="composer">
+      <div class="input"><textarea id="prompt" rows="1" placeholder="Ask about satellites, weather, or alerts in any language…"></textarea></div>
+      <button id="mic" class="mic">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-mic" viewBox="0 0 16 16" color="white">
+          <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5"/>
+          <path d="M10 8a2 2 0 1 1-4 0V3a2 2 0 1 1 4 0zM8 0a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V3a3 3 0 0 0-3-3"/>
+        </svg>
+      </button>
+      <button id="send" class="send">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16" color="white">
+          <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576zm6.787-8.201L1.591 6.602l4.339 2.76z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const chat=document.getElementById('chat');
+  const promptEl=document.getElementById('prompt');
+  const sendBtn=document.getElementById('send');
+  const micBtn=document.getElementById('mic');
+  const clearBtn=document.getElementById('clearBtn');
+  const modeSelect=document.getElementById('modeSelect');
+  const regionInput=document.getElementById('regionInput');
+  const setRegionBtn=document.getElementById('setRegionBtn');
+  
+  // Chat History elements
+  const chatHistorySidebar = document.getElementById('chatHistorySidebar');
+  const historyToggle = document.getElementById('historyToggle');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const chatSessionsList = document.getElementById('chatSessionsList');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const mainContent = document.getElementById('mainContent');
+  
+  // Rename modal elements
+  const renameModal = document.getElementById('renameModal');
+  const renameModalClose = document.getElementById('renameModalClose');
+  const renameCancelBtn = document.getElementById('renameCancelBtn');
+  const renameSaveBtn = document.getElementById('renameSaveBtn');
+  const renameInput = document.getElementById('renameInput');
+
+  let currentRegion = null;
+  let currentSessionId = sessionStorage.getItem('currentSessionId') || null;
+  let currentRenamingSessionId = null;
+
+  function scrollBottom(){ chat.scrollTop=chat.scrollHeight; }
+  
+  function msgTemplate(role,html){
+    const msg=document.createElement('div');
+    msg.className='msg '+(role==='user'?'user':'bot');
+    msg.innerHTML=`<div class="avatar">${role==='user'?'👩🏽‍🚀':'🛰'}</div><div class="bubble">${html}</div><div></div>`;
+    return msg;
+  }
+  
+  function addUser(text){
+    chat.appendChild(msgTemplate('user',`<h4>You</h4>${text}`));
+    scrollBottom();
+  }
+  
+  function addBot(answer,mode){
+    let badge = '';
+    if(mode === 'isro') {
+      badge = '<div class="badge isro"><span class="dot"></span> ISRO Mode</div>';
+    } else if(mode === 'weather') {
+      badge = '<div class="badge weather"><span class="dot"></span> Weather Mode</div>';
+    } else {
+      badge = '<div class="badge isro"><span class="dot"></span> Auto Mode</div>';
+    }
+    
+    chat.appendChild(msgTemplate('bot',`<h4>AstroBot</h4>${answer}${badge}`));
+    scrollBottom();
+  }
+
+  function welcomeMsg(){
+    const welcome=`<h4>AstroBot</h4>Hi! I'm your AstroBot assistant powered by MOSDAC (ISRO). Ask me about satellites, weather, or alerts in any language...<div class="badge isro"><span class="dot"></span> Auto Mode Active</div>`;
+    chat.innerHTML='';
+    chat.appendChild(msgTemplate('bot',welcome));
+  }
+
+  async function sendToServer(message, mode) {
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message, mode })
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        return {answer: `Error: ${data.error}`, mode: 'isro'};
+      }
+      
+      return {answer: data.response, mode: data.mode || 'isro', hasPdf: data.has_pdf || false};
+    } catch (error) {
+      return {answer: 'Connection error. Please try again.', mode: 'isro', hasPdf: false};
+    }
+  }
+
+  async function setRegion(region) {
+    try {
+      const response = await fetch('/set_region', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ region })
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+        return false;
+      }
+      
+      currentRegion = region;
+      addBot(`Region set to: ${region}`, 'weather');
+      return true;
+    } catch (error) {
+      alert('Error setting region');
+      return false;
+    }
+  }
+
+  // Chat History functionality
+  // Toggle sidebar
+  historyToggle.addEventListener('click', () => {
+    chatHistorySidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('open');
+    mainContent.classList.toggle('sidebar-open');
+    if (chatHistorySidebar.classList.contains('open')) {
+      loadChatSessions();
+    }
+  });
+
+  // Close sidebar when clicking overlay
+  sidebarOverlay.addEventListener('click', () => {
+    chatHistorySidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('open');
+    mainContent.classList.remove('sidebar-open');
+  });
+
+  closeSidebar.addEventListener('click', () => {
+    chatHistorySidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('open');
+    mainContent.classList.remove('sidebar-open');
+  });
+
+  // Close sidebar when pressing Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && chatHistorySidebar.classList.contains('open')) {
+      chatHistorySidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+      mainContent.classList.remove('sidebar-open');
+    }
+  });
+
+  // Load chat sessions
+  async function loadChatSessions() {
+    try {
+      const response = await fetch('/api/chat_sessions');
+      if (!response.ok) {
+        console.error('Failed to load chat sessions');
+        return;
+      }
+      const sessions = await response.json();
+      
+      chatSessionsList.innerHTML = '';
+      
+      sessions.forEach(session => {
+        const li = document.createElement('li');
+        li.className = 'chat-session-item';
+        li.dataset.id = session.id;
+        
+        if (session.id == currentSessionId) {
+          li.classList.add('active');
+        }
+        
+        const title = session.title.length > 30 ? session.title.substring(0, 30) + '...' : session.title;
+        const date = new Date(session.updated_at).toLocaleString();
+        
+        li.innerHTML = `
+          <div class="chat-session-title">${escapeHtml(title)}</div>
+          <div class="chat-session-date">${date}</div>
+          <div class="chat-session-actions">
+            <button class="rename-session-btn" data-id="${session.id}">Rename</button>
+            <button class="delete-session-btn" data-id="${session.id}">Delete</button>
+          </div>
+        `;
+        
+        li.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('delete-session-btn') && 
+              !e.target.classList.contains('rename-session-btn')) {
+            loadSession(session.id);
+          }
+        });
+        
+        const deleteBtn = li.querySelector('.delete-session-btn');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteSession(session.id);
+        });
+        
+        const renameBtn = li.querySelector('.rename-session-btn');
+        renameBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openRenameModal(session.id, session.title);
+        });
+        
+        chatSessionsList.appendChild(li);
+      });
+    } catch (error) {
+      console.error('Error loading chat sessions:', error);
+    }
+  }
+
+  // Open rename modal
+  function openRenameModal(sessionId, currentTitle) {
+    currentRenamingSessionId = sessionId;
+    renameInput.value = currentTitle;
+    renameModal.classList.add('open');
+    renameInput.focus();
+    renameInput.select();
+  }
+
+  // Close rename modal
+  function closeRenameModal() {
+    renameModal.classList.remove('open');
+    currentRenamingSessionId = null;
+    renameInput.value = '';
+  }
+
+  // Save renamed session
+  async function saveRenamedSession() {
+    if (!currentRenamingSessionId) return;
+    
+    const newTitle = renameInput.value.trim();
+    if (!newTitle) {
+      alert('Please enter a chat name');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/chat_sessions/${currentRenamingSessionId}/rename`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title: newTitle })
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to rename session');
+        return;
+      }
+      
+      // Reload sessions to show the updated title
+      loadChatSessions();
+      closeRenameModal();
+    } catch (error) {
+      console.error('Error renaming session:', error);
+    }
+  }
+
+  // Set up rename modal event listeners
+  renameModalClose.addEventListener('click', closeRenameModal);
+  renameCancelBtn.addEventListener('click', closeRenameModal);
+  renameSaveBtn.addEventListener('click', saveRenamedSession);
+  
+  // Close modal when clicking outside
+  renameModal.addEventListener('click', (e) => {
+    if (e.target === renameModal) {
+      closeRenameModal();
+    }
+  });
+  
+  // Allow saving with Enter key
+  renameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveRenamedSession();
+    }
+  });
+
+  // Load a specific session
+  async function loadSession(sessionId) {
+    try {
+      const response = await fetch(`/api/chat_sessions/${sessionId}/messages`);
+      if (!response.ok) {
+        console.error('Failed to load session messages');
+        return;
+      }
+      const messages = await response.json();
+      
+      // Clear current chat
+      chat.innerHTML = '';
+      
+      // Add messages to chat
+      messages.forEach(msg => {
+        if (msg.role === 'user') {
+          addUser(msg.content);
+        } else {
+          addBot(msg.content, msg.mode || 'isro');
+        }
+      });
+      
+      // Update current session ID
+      currentSessionId = sessionId;
+      sessionStorage.setItem('currentSessionId', sessionId);
+      
+      // Update active class
+      document.querySelectorAll('.chat-session-item').forEach(item => {
+        item.classList.remove('active');
+        if (parseInt(item.dataset.id) === sessionId) {
+          item.classList.add('active');
+        }
+      });
+      
+      // Close sidebar
+      chatHistorySidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+      mainContent.classList.remove('sidebar-open');
+    } catch (error) {
+      console.error('Error loading session:', error);
+    }
+  }
+
+  // Create new chat session
+  newChatBtn.addEventListener('click', async () => {
+    try {
+      const response = await fetch('/api/chat_sessions/new', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title: 'New Chat' })
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to create new session');
+        return;
+      }
+      
+      const newSession = await response.json();
+      
+      // Clear chat
+      chat.innerHTML = '';
+      welcomeMsg();
+      
+      // Update current session ID
+      currentSessionId = newSession.id;
+      sessionStorage.setItem('currentSessionId', newSession.id);
+      
+      // Reload sessions
+      loadChatSessions();
+      
+      // Close sidebar
+      chatHistorySidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+      mainContent.classList.remove('sidebar-open');
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    }
+  });
+
+  // Delete chat session
+  async function deleteSession(sessionId) {
+    if (!confirm('Are you sure you want to delete this chat?')) return;
+    
+    try {
+      const response = await fetch(`/api/chat_sessions/${sessionId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        // If we deleted the current session, clear the chat
+        if (currentSessionId == sessionId) {
+          currentSessionId = null;
+          sessionStorage.removeItem('currentSessionId');
+          chat.innerHTML = '';
+          welcomeMsg();
+        }
+        
+        // Reload sessions
+        loadChatSessions();
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+    }
+  }
+
+  // Utility function to escape HTML
+  function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  async function clearChat() {
+    try {
+      await fetch('/clear_chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      welcomeMsg();
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+    }
+  }
+
+  async function send(){
+    const text=promptEl.value.trim();
+    if(!text) return;
+    
+    addUser(text);
+    promptEl.value='';
+    
+    const mode = modeSelect.value;
+    const {answer, mode: responseMode, hasPdf} = await sendToServer(text, mode);
+    
+    addBot(answer, responseMode);
+    
+    // Add click event listener for PDF links
+    if (hasPdf) {
+      setTimeout(() => {
+        const pdfLinks = chat.querySelectorAll('.bubble a');
+        pdfLinks.forEach(link => {
+          link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const pdfUrl = link.getAttribute('href');
+            window.open(pdfUrl, '_blank');
+          });
+        });
+      }, 100);
+    }
+  }
+
+  sendBtn.addEventListener('click',send);
+  promptEl.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+  clearBtn.addEventListener('click',clearChat);
+  setRegionBtn.addEventListener('click',()=>{
+    const region = regionInput.value.trim();
+    if(region) setRegion(region);
+  });
+
+  // Mic: speech to text
+  let recognition=null,listening=false;
+  if('webkitSpeechRecognition' in window){
+    recognition=new webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-IN';
+    recognition.onresult=(e)=>{
+      promptEl.value=e.results[0][0].transcript;
+    };
+    recognition.onend=()=>{listening=false;micBtn.classList.remove('rec');};
+    recognition.onerror=(e)=>{console.error('Speech recognition error:', e.error);};
+  }
+  micBtn.addEventListener('click',()=>{
+    if(!recognition){alert('Speech recognition not supported.');return;}
+    if(!listening){listening=true;micBtn.classList.add('rec');recognition.start();}
+    else{recognition.stop();}
+  });
+
+  // Init
+  welcomeMsg();
+})();
+</script>
+</body>
+</html>
